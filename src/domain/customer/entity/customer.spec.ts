@@ -1,3 +1,6 @@
+import PushMessageWhenCustomerIsCreatedHandler from "../event/handler/push-message-when-customer-is-created.handler";
+import SendEmailWhenCustomerIsCreatedHandler from "../event/handler/send-email-when-customer-is-created.handler";
+import SendNotificationWhenCustomerAddressIsChangedHandler from "../event/handler/send-notification-when-customer-address-is-changed.handler";
 import Address from "../value-object/address";
 import Customer from "./customer";
 
@@ -28,11 +31,13 @@ describe("Customer unit tests", () => {
   it("should activate customer", () => {
     const customer = new Customer("1", "Customer 1");
     const address = new Address("Street 1", 123, "13330-250", "São Paulo");
+
     customer.Address = address;
 
     customer.activate();
 
     expect(customer.isActive()).toBe(true);
+
   });
 
   it("should throw error when address is undefined when you activate a customer", () => {
@@ -59,5 +64,33 @@ describe("Customer unit tests", () => {
 
     customer.addRewardPoints(10);
     expect(customer.rewardPoints).toBe(20);
+  });
+
+  it("should notify when customer is created", () => {
+    const spyEmail = jest.spyOn(SendEmailWhenCustomerIsCreatedHandler.prototype, "handle");
+    const spyPush = jest.spyOn(PushMessageWhenCustomerIsCreatedHandler.prototype, "handle");
+
+    const customer = new Customer("1", "Customer 1");
+
+    expect(spyEmail).toHaveBeenCalled();
+    expect(spyPush).toHaveBeenCalled();
+  });
+
+  it("should notify when customer address is changed", () => {
+    const spy = jest.spyOn(SendNotificationWhenCustomerAddressIsChangedHandler.prototype, "handle");
+
+    const customer = new Customer("1", "Customer 1");
+
+    const address = new Address("Street 1", 123, "13330-250", "São Paulo");
+    
+    customer.Address = address;
+    expect(spy).toHaveBeenCalled();
+    
+    const address2 = new Address("Street 2", 456, "13330-270", "Minas Gerais");
+
+    customer.changeAddress(address2);
+
+    expect(spy).toHaveBeenCalled();
+
   });
 });
